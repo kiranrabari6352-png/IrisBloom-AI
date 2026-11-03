@@ -305,20 +305,20 @@ st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
 # STATE
 # ============================================================
 st.session_state.setdefault("prediction_result", None)
-st.session_state.setdefault("values", PRESETS["Custom"])
+st.session_state.setdefault("flower_vals", PRESETS["Custom"])
  
  
 def on_sample_change():
     choice = st.session_state.sample
     if choice == "Random":
-        st.session_state.values = [
+        st.session_state.flower_vals = [
             round(random.uniform(4.3, 7.9), 1),
             round(random.uniform(2.0, 4.4), 1),
             round(random.uniform(1.0, 6.9), 1),
             round(random.uniform(0.1, 2.5), 1),
         ]
     else:
-        st.session_state.values = PRESETS[choice]
+        st.session_state.flower_vals = PRESETS[choice]
  
  
 # ============================================================
@@ -346,7 +346,7 @@ with input_col:
             on_change=on_sample_change,
         )
  
-        d = st.session_state.values
+        d = st.session_state.flower_vals
  
         with st.form("prediction_form", border=False):
             c1, c2 = st.columns(2)
@@ -554,4 +554,3 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
-
