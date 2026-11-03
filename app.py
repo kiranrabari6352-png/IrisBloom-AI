@@ -1,66 +1,74 @@
-from flask import Flask, render_template, request
-import pickle
-import os
-import pandas as pd
 
-app = Flask(__name__)
+import streamlit as st
+import pickle
+import pandas as pd
+import os
+
+st.set_page_config(
+    page_title="IrisBloom AI",
+    page_icon="🌸",
+    layout="wide"
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(BASE_DIR, "iris_model.pkl"), "rb") as file:
-    model = pickle.load(file)
+with open(os.path.join(BASE_DIR, "iris_model.pkl"), "rb") as f:
+    model = pickle.load(f)
 
-with open(os.path.join(BASE_DIR, "iris_names.pkl"), "rb") as file:
-    flower_names = [str(name) for name in pickle.load(file)]
+with open(os.path.join(BASE_DIR, "iris_names.pkl"), "rb") as f:
+    flower_names = pickle.load(f)
 
-FEATURES = [
-    "sepal length (cm)",
-    "sepal width (cm)",
-    "petal length (cm)",
-    "petal width (cm)",
-]
-FORM_KEYS = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
+st.title("🌸 IrisBloom AI")
+st.subheader("Intelligent Iris Flower Classification")
+st.write("Enter flower measurements to predict its species.")
 
+st.divider()
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    prediction = None
-    error = None
-    probs = None
-    values = None
+col1, col2 = st.columns(2)
 
-    if request.method == "POST":
-        values = {key: request.form.get(key, "") for key in FORM_KEYS}
-        try:
-            numbers = [float(values[key]) for key in FORM_KEYS]
-
-            if any(v <= 0 or v > 10 for v in numbers):
-                error = "Enter measurements greater than 0 and at most 10."
-            else:
-                flower = pd.DataFrame([numbers], columns=FEATURES)
-
-                index = int(model.predict(flower)[0])
-                prediction = flower_names[index].capitalize()
-
-                proba = model.predict_proba(flower)[0]
-                probs = [
-                    {"name": flower_names[i].capitalize(), "pct": round(p * 100)}
-                    for i, p in enumerate(proba)
-                ]
-
-        except ValueError:
-            error = "Please enter valid numeric measurements."
-        except Exception as e:
-            error = "Prediction error: " + str(e)
-
-    return render_template(
-        "index.html",
-        prediction=prediction,
-        error=error,
-        probs=probs,
-        values=values,
+with col1:
+    sepal_length = st.number_input(
+        "Sepal Length (cm)", min_value=0.1, max_value=10.0, value=5.1
+    )
+    sepal_width = st.number_input(
+        "Sepal Width (cm)", min_value=0.1, max_value=10.0, value=3.5
     )
 
+with col2:
+    petal_length = st.number_input(
+        "Petal Length (cm)", min_value=0.1, max_value=10.0, value=1.4
+    )
+    petal_width = st.number_input(
+        "Petal Width (cm)", min_value=0.1, max_value=10.0, value=0.2
+    )
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if st.button("🌼 Predict Flower", use_container_width=True):
+
+    columns = [
+        "sepal length (cm)",
+        "sepal width (cm)",
+        "petal length (cm)",
+        "petal width (cm)"
+    ]
+
+    values = [[
+        sepal_length,
+        sepal_width,
+        petal_length,
+        petal_width
+    ]]
+
+    flower = pd.DataFrame(values, columns=columns)
+
+    result = model.predict(flower)[0]
+    prediction = str(flower_names[result]).capitalize()
+
+    st.success("Prediction Completed Successfully!")
+
+    st.markdown("## 🌺 Prediction Result")
+    st.title(prediction)
+
+    st.balloons()
+
+st.divider()
+st.caption("IrisBloom AI | Machine Learning Project")
