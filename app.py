@@ -1,3 +1,4 @@
+
 """IrisBloom AI - Iris species prediction with a K-Nearest Neighbours model.
  
 Run locally:   streamlit run app.py
@@ -413,16 +414,16 @@ div.stButton > button{
 }
 div.stButton > button:hover{ border-color:rgba(94,234,212,.5); color:var(--mint); transform:translateY(-1px); }
 [class*="st-key-chip_"] button{ min-height:38px; border-radius:999px; font-size:13px; padding:0 8px; }
-.st-key-predict_btn button{
-  min-height:52px; border:none; font-weight:800; font-size:15px; color:#04141a;
-  background:linear-gradient(90deg,var(--mint),var(--sky),var(--violet));
-  background-size:200% auto; box-shadow:0 12px 30px -12px rgba(94,234,212,.55);
+div.st-key-predict_btn button, .st-key-predict_btn [data-testid^="stBaseButton"]{
+  min-height:52px!important; border:none!important; font-weight:800!important; font-size:15px!important;
+  background:linear-gradient(90deg,#5eead4,#7dd3fc,#c4b5fd)!important;
+  background-size:200% auto!important; box-shadow:0 12px 30px -12px rgba(94,234,212,.55)!important;
 }
-.st-key-predict_btn button:hover{
-  background-position:right center; transform:translateY(-2px); color:#04141a;
-  box-shadow:0 18px 40px -12px rgba(125,211,252,.6);
+div.st-key-predict_btn button:hover, .st-key-predict_btn [data-testid^="stBaseButton"]:hover{
+  background-position:right center!important; transform:translateY(-2px);
+  box-shadow:0 18px 40px -12px rgba(125,211,252,.6)!important;
 }
-.st-key-predict_btn button p{ color:#04141a!important; font-weight:800; }
+.st-key-predict_btn button, .st-key-predict_btn button *{ color:#04141a!important; font-weight:800!important; }
 .st-key-reset_btn button{ min-height:52px; }
 .hint{ text-align:center; color:var(--muted); font-size:12px; margin-top:6px; }
  
@@ -480,6 +481,26 @@ div.stButton > button:hover{ border-color:rgba(94,234,212,.5); color:var(--mint)
  
 /* slider colours (works even without .streamlit/config.toml) */
 div[data-baseweb="slider"] div[role="slider"]{ background-color:#5eead4!important; box-shadow:0 0 0 4px rgba(94,234,212,.2)!important; }
+/* Streamlit's default red track -> mint (only matches while the default red is in use) */
+div[data-baseweb="slider"] div[style*="255, 75, 75"]{ filter:hue-rotate(175deg) saturate(.85); }
+ 
+/* ---------- MOBILE / LOW-POWER DEVICES ---------- */
+@media (max-width:768px){
+  *{ backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
+  .stApp::before{ display:none; }
+  .gradient, .dot, .empty .ring, .result, .fill{ animation:none!important; }
+  .block-container{ padding:.8rem .9rem 2.5rem; }
+  .hero{ padding:44px 4px 26px; }
+  .hero h1{ letter-spacing:-1.2px; }
+  [class*="st-key-panel_"]{ padding:16px 14px; border-radius:20px; }
+  .section-eyebrow{ margin-top:56px; }
+  .nav{ padding:10px 14px; }
+  .pill-live{ font-size:9.5px; padding:6px 10px; letter-spacing:1.2px; }
+  .ntable{ font-size:12px; }
+}
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none!important; transition:none!important; }
+}
  
 /* ---------- SECTIONS ---------- */
 .section-eyebrow{ text-align:center; margin-top:84px; font-family:'JetBrains Mono',monospace; color:var(--mint); font-size:11px; font-weight:700; letter-spacing:2.4px; }
