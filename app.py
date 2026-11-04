@@ -1,4 +1,3 @@
-
 import os
 import pickle
 import random
@@ -292,6 +291,30 @@ div.stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hove
 }
 div.stButton > button:active, div[data-testid="stFormSubmitButton"] > button:active{ transform:translateY(0); }
  
+.st-key-predict_btn button{
+  background:linear-gradient(90deg,var(--mint),var(--sky),var(--violet))!important;
+  background-size:200% auto!important; color:#04141a!important; border:none!important;
+}
+.st-key-predict_btn button:hover{ background-position:right center!important; }
+.st-key-predict_btn button p{ color:#04141a!important; font-weight:800!important; }
+ 
+/* ---------- SAMPLE CHIPS + RESET ---------- */
+[class*="st-key-chip_"] button, .st-key-reset_btn button{
+  min-height:44px; border-radius:12px; font-weight:600; letter-spacing:0;
+  color:var(--text)!important; background:rgba(8,12,20,.8)!important;
+  border:1px solid rgba(148,163,184,.22)!important; box-shadow:none!important;
+}
+[class*="st-key-chip_"] button:hover, .st-key-reset_btn button:hover{
+  border-color:var(--mint)!important; transform:translateY(-1px); background:rgba(94,234,212,.08)!important;
+}
+[class*="st-key-chip_"] button[kind="primary"], [class*="st-key-chip_"] [data-testid="stBaseButton-primary"]{
+  border-color:var(--mint)!important; background:rgba(94,234,212,.14)!important;
+  box-shadow:0 0 0 3px rgba(94,234,212,.12)!important;
+}
+[data-testid="stSlider"] [role="slider"]{ background:var(--mint)!important; box-shadow:0 0 0 4px rgba(94,234,212,.18); }
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div{ height:5px; }
+[data-testid="stCaptionContainer"]{ color:var(--muted)!important; }
+ 
 /* ---------- RESULT ---------- */
 .result{
   position:relative; overflow:hidden; border-radius:20px; padding:26px;
@@ -404,21 +427,58 @@ st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
 # STATE
 # ============================================================
 st.session_state.setdefault("prediction_result", None)
-st.session_state.setdefault("flower_vals", PRESETS["Custom"])
 st.session_state.setdefault("history", [])
+st.session_state.setdefault("active_sample", "Custom")
+ 
+# key prefix -> (label, typical min, typical max); order matches FEATURES
+INPUTS = [
+    ("sl", "SEPAL LENGTH (cm)", 4.3, 7.9),
+    ("sw", "SEPAL WIDTH (cm)", 2.0, 4.4),
+    ("pl", "PETAL LENGTH (cm)", 1.0, 6.9),
+    ("pw", "PETAL WIDTH (cm)", 0.1, 2.5),
+]
  
  
-def on_sample_change():
-    choice = st.session_state.sample
-    if choice == "Random":
-        st.session_state.flower_vals = [
-            round(random.uniform(4.3, 7.9), 1),
-            round(random.uniform(2.0, 4.4), 1),
-            round(random.uniform(1.0, 6.9), 1),
-            round(random.uniform(0.1, 2.5), 1),
-        ]
+def _clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+ 
+ 
+def set_values(vals):
+    """Set number inputs and sliders together (must run before the widgets are drawn)."""
+    for (k, _, lo, hi), v in zip(INPUTS, vals):
+        v = round(float(v), 1)
+        st.session_state[f"{k}_n"] = v
+        st.session_state[f"{k}_s"] = _clamp(v, lo, hi)
+ 
+ 
+def sync_from_num(k, lo, hi):
+    v = round(float(st.session_state[f"{k}_n"]), 1)
+    st.session_state[f"{k}_s"] = _clamp(v, lo, hi)
+    st.session_state.active_sample = "Custom"
+ 
+ 
+def sync_from_slider(k):
+    st.session_state[f"{k}_n"] = round(float(st.session_state[f"{k}_s"]), 1)
+    st.session_state.active_sample = "Custom"
+ 
+ 
+def pick_sample(name):
+    if name == "Random":
+        set_values([round(random.uniform(lo, hi), 1) for _, _, lo, hi in INPUTS])
     else:
-        st.session_state.flower_vals = PRESETS[choice]
+        set_values(PRESETS[name])
+    st.session_state.active_sample = name
+    st.toast(f"{name} sample loaded", icon="🌱")
+ 
+ 
+def reset_all():
+    set_values(PRESETS["Custom"])
+    st.session_state.active_sample = "Custom"
+    st.session_state.prediction_result = None
+ 
+ 
+if "sl_n" not in st.session_state:
+    set_values(PRESETS["Custom"])
  
  
 # ============================================================
@@ -442,41 +502,68 @@ with tab_predict:
                     """
 <span class="step">STEP 01 / INPUT</span>
 <div class="ptitle">Flower Parameters</div>
-<p class="muted">Pick a quick sample or enter your own flower measurements.</p>
+<p class="muted">Use a quick sample, drag the sliders, or type your own measurements in centimetres.</p>
 """
                 ),
                 unsafe_allow_html=True,
             )
  
-            st.selectbox(
-                "QUICK SAMPLES",
-                ["Custom", "Setosa", "Versicolor", "Virginica", "Random"],
-                key="sample",
-                on_change=on_sample_change,
-            )
- 
-            d = st.session_state.flower_vals
- 
-            with st.form("prediction_form", border=False):
-                c1, c2 = st.columns(2)
-                with c1:
-                    sepal_length = st.number_input(
-                        "SEPAL LENGTH (cm)", 0.1, 10.0, float(d[0]), step=0.1, key=f"sl_{d}"
-                    )
-                    petal_length = st.number_input(
-                        "PETAL LENGTH (cm)", 0.1, 10.0, float(d[2]), step=0.1, key=f"pl_{d}"
-                    )
-                with c2:
-                    sepal_width = st.number_input(
-                        "SEPAL WIDTH (cm)", 0.1, 10.0, float(d[1]), step=0.1, key=f"sw_{d}"
-                    )
-                    petal_width = st.number_input(
-                        "PETAL WIDTH (cm)", 0.1, 10.0, float(d[3]), step=0.1, key=f"pw_{d}"
-                    )
- 
-                predict_button = st.form_submit_button(
-                    "✦ Predict Flower Species  →", use_container_width=True
+            # ---- quick sample chips ----
+            st.markdown("<div class='rlabel' style='margin:6px 0 8px'>QUICK SAMPLES</div>", unsafe_allow_html=True)
+            chip_cols = st.columns(4, gap="small")
+            for col, name in zip(chip_cols, ["Setosa", "Versicolor", "Virginica", "Random"]):
+                icon = "🎲" if name == "Random" else EMOJI[name]
+                col.button(
+                    f"{icon} {name}",
+                    key=f"chip_{name}",
+                    on_click=pick_sample,
+                    args=(name,),
+                    type="primary" if st.session_state.active_sample == name else "secondary",
+                    use_container_width=True,
                 )
+ 
+            # ---- number inputs + synced sliders ----
+            m1, m2 = st.columns(2, gap="medium")
+            grid = {"sl": m1, "sw": m2, "pl": m1, "pw": m2}
+            for k, label, lo, hi in INPUTS:
+                with grid[k]:
+                    st.number_input(
+                        label,
+                        min_value=0.1,
+                        max_value=10.0,
+                        step=0.1,
+                        format="%.1f",
+                        key=f"{k}_n",
+                        on_change=sync_from_num,
+                        args=(k, lo, hi),
+                    )
+                    st.slider(
+                        label,
+                        min_value=lo,
+                        max_value=hi,
+                        step=0.1,
+                        key=f"{k}_s",
+                        on_change=sync_from_slider,
+                        args=(k,),
+                        label_visibility="collapsed",
+                    )
+                    st.caption(f"Typical range: {lo} – {hi} cm")
+ 
+            sepal_length = st.session_state.sl_n
+            sepal_width = st.session_state.sw_n
+            petal_length = st.session_state.pl_n
+            petal_width = st.session_state.pw_n
+ 
+            b1, b2 = st.columns([4, 1], gap="small")
+            with b1:
+                predict_button = st.button(
+                    "✦ Predict Flower Species  →",
+                    key="predict_btn",
+                    type="primary",
+                    use_container_width=True,
+                )
+            with b2:
+                st.button("Reset", key="reset_btn", on_click=reset_all, use_container_width=True)
  
     # ---- prediction logic ----
     if predict_button:
@@ -1064,3 +1151,4 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
+ 
